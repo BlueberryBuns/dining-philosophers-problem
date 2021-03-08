@@ -4,7 +4,7 @@ from time import sleep
 
 # AVALIABLE_STATES = ['Thinking','Hungry','Eating']
 PHILOSOPHERS = []
-checking = threading.Lock()
+checking = threading.Lock() # Mutex ogólny
 N = 5
 
 class Philosopher(threading.Thread):
@@ -14,7 +14,7 @@ class Philosopher(threading.Thread):
         self.pid = pid
         self.dishes_eaten = 0
         self.status = "Thinking"
-        self.condition = threading.Condition()
+        self.condition = threading.Condition() # Zaweira Mutex wewnątrz
         print("Philosopher created!")
 
     def foo(self):
@@ -25,7 +25,6 @@ class Philosopher(threading.Thread):
                 self.condition.wait()
             self.__eating()
             self.__thinking()
-
 
     def __eating(self):
         self.status = 'Eating'
@@ -44,20 +43,16 @@ class Philosopher(threading.Thread):
             PHILOSOPHERS[(self.pid - 1) % N].condition.notify()
             PHILOSOPHERS[(self.pid - 1) % N].condition.release()
 
-
-
     def __thinking(self):
         self.status = 'Thinking'
         checking.release()
         print(f'Philosopher {self.pid} started thinking')
         sleep(Radom.uniform(2.5, 3.5))
 
-        
     def __hungry(self):
         checking.acquire()
         self.status = 'Hungry'
         checking.release()
-
 
     def __check_forks(self):
         checking.acquire()
@@ -84,8 +79,9 @@ class Philosopher(threading.Thread):
 
         return True
 
+
 def main():
-    global STATES, PHILOSOPHERS, N
+    global PHILOSOPHERS, N
     PHILOSOPHERS  = [Philosopher(i) for i in range(N)]
 
     for x in PHILOSOPHERS:
