@@ -1,12 +1,45 @@
+from flask import Flask, render_template, request
+from flask_socketio import SocketIO, emit
 import threading
 import random as Radom
 from time import sleep
-#from app import socketio
+import json
+import threading
+import random as Radom
+from time import sleep
 
-# AVALIABLE_STATES = ['Thinking','Hungry','Eating']
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = '248889'
+socketio = SocketIO(app)
+app_started = False
 PHILOSOPHERS = []
 checking = threading.Lock() # Mutex ogólny
 N = 5
+
+def ack():
+    print('message received')
+
+@socketio.on('philosophers')
+def run_philosophers(data):
+    emit('philosophers', callback=ack)
+
+@socketio.on('connection')
+def connected(json):
+    global app_started
+    if (not app_started) and True:
+        print('working')
+        app_started = False
+        emit('initialize', {'data': 'tmp'})
+    print(json['data'])
+
+@socketio.on('philosphers')
+def update(json):
+    emit('update', json)
+
+@app.route('/')
+def philosophers():
+    return render_template('index.html', context={'philosophers': PHILOSOPHERS})
 
 class Philosopher(threading.Thread):
 
@@ -21,22 +54,24 @@ class Philosopher(threading.Thread):
     def foo(self):
         self.condition.acquire()
         while True:
-            self.__hungry()
+            self.hungry()
             while not self.__check_forks():
                 self.condition.wait()
-            self.__eating()
-            self.__thinking()
+            self.eating()
+            self.thinking()
 
-    def __eating(self):
+    @socketio.on('update')
+    def eating(self):
         self.status = 'Eating'
         checking.release()
         eating_time = Radom.uniform(2.5, 3.5)
         #print(f'Philosopher {self.pid} started eating')
-        print({ 'Pid': self.pid, 
+        e_data = { 'Pid': self.pid, 
                 'Dishes eaten': self.dishes_eaten,
                 'Status': self.status,
-                'Remaining time': eating_time})
-        #emit('update status', )
+                'Remaining time': eating_time}
+        print(e_data)
+        socketio.emit('update', e_data)
         sleep(eating_time)
         checking.acquire()
         self.dishes_eaten += 1
@@ -50,14 +85,18 @@ class Philosopher(threading.Thread):
             PHILOSOPHERS[(self.pid - 1) % N].condition.notify()
             PHILOSOPHERS[(self.pid - 1) % N].condition.release()
 
-    def __thinking(self):
+    @socketio.on('update')
+    def thinking(self):
         self.status = 'Thinking'
         checking.release()
         thinking_time = Radom.uniform(2.5, 3.5)
-        print('update', { 'Pid': self.pid, 
-                'Dishes eaten': self.dishes_eaten,
-                'Status': self.status,
-                'Remaining time': thinking_time})
+        t_data = { 'pid': self.pid, 
+                'pishes eaten': self.dishes_eaten,
+                'status': self.status,
+                'remaining time': thinking_time}
+        
+        socketio.emit('update', t_data)
+        print(t_data)
 
         # print({ 'Pid': self.pid, 
         #         'Dishes eaten': self.dishes_eaten,
@@ -66,13 +105,14 @@ class Philosopher(threading.Thread):
         #print(f'Philosopher {self.pid} started thinking')
         sleep(thinking_time)
 
-    def __hungry(self):
+    def hungry(self):
         checking.acquire()
         self.status = 'Hungry'
-        print({ 'Pid': self.pid, 
-                'Dishes eaten': self.dishes_eaten,
-                'Status': self.status,
-                'Remaining time': 0})
+        h_data = { 'pid': self.pid, 
+                'dishes eaten': self.dishes_eaten,
+                'status': self.status,
+                'remaining time': 0}
+        socketio.emit('update', h_data)
         checking.release()
 
     def __check_forks(self):
@@ -100,39 +140,16 @@ class Philosopher(threading.Thread):
 
         return True
 
+@socketio.on('run')
+def initilizer():
+    print('stared main')
+    global PHILOSOPHERS, N
+    PHILOSOPHERS  = [Philosopher(i) for i in range(N)]
 
-# class Display:
-    
-#     def __init__(self):
-#         self.min_window_res=(160,90)
-#         self.current_res = (160,90)
-#         self.window = curses.initscr()
+    for x in PHILOSOPHERS:
+        x.start()
 
-#     def get_window_resolution(self):
-#         return self.window.getmaxyx()
 
-#     def refresh_window(self):
-#         while(True):
-#             if (lambda x: )
 
-#     def keyboard_listener(self):
-#         ch = self.window.getch()
-#         if ch == '\n':
-#             return True
-#         else:
-#             return False
-
-#     def display_window(self):
-#         pass
-
-# @socketio.on('run')
-# def main(data):
-#     print('stared main')
-#     global PHILOSOPHERS, N
-#     PHILOSOPHERS  = [Philosopher(i) for i in range(N)]
-
-#     for x in PHILOSOPHERS:
-#         x.start()
-    
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    socketio.run(app)

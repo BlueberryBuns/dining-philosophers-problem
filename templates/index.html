@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Philosophers</title>
+</head>
+<body>
+    <h1>Filozofowie</h1>
+    <input type="button" value="Start Philosophers" method="POST">
+    <script src="https://cdn.socket.io/3.1.1/socket.io.min.js" integrity="sha384-gDaozqUvc4HTgo8iZjwth73C6dDDeOJsAgpxBcMpZYztUfjHXpzrpdrHRdVp8ySO" crossorigin="anonymous"></script>
+    <script type="text/javascript" charset="utf-8">
+        var socket = io();
+        socket.on('connect', function() {
+            socket.emit('connection', {data: 'I\'m connected!'});
+        });
+    </script>
+    <script>
+        socket.on('initialize', function(data){
+            console.log(data.data)
+            socket.emit('run');
+        });
+        </script>
+    {% block philo %}
+    {% for p in context['philosophers'] %}
+    <h1>{{p.pid}}</h1>
+    <script>
+        socket.on('update', function(data){
+            console.log(data)
+        });
+        </script>
+        
+    {% endfor %}
+    {% endblock %}
+</body>
+</html>
