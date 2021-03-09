@@ -4,10 +4,7 @@ import threading
 import random as Radom
 from time import sleep
 import json
-import threading
-import random as Radom
-from time import sleep
-
+import numpy as np
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '248889'
@@ -29,7 +26,7 @@ def connected(json):
     global app_started
     if (not app_started) and True:
         print('working')
-        app_started = False
+        app_started = True
         emit('initialize', {'data': 'tmp'})
     print(json['data'])
 
@@ -66,10 +63,10 @@ class Philosopher(threading.Thread):
         checking.release()
         eating_time = Radom.uniform(2.5, 3.5)
         #print(f'Philosopher {self.pid} started eating')
-        e_data = { 'Pid': self.pid, 
-                'Dishes eaten': self.dishes_eaten,
-                'Status': self.status,
-                'Remaining time': eating_time}
+        e_data = { 'pid': self.pid, 
+                'dishes': self.dishes_eaten,
+                'status': self.status,
+                'time': eating_time}
         print(e_data)
         socketio.emit('update', e_data)
         sleep(eating_time)
@@ -91,9 +88,9 @@ class Philosopher(threading.Thread):
         checking.release()
         thinking_time = Radom.uniform(2.5, 3.5)
         t_data = { 'pid': self.pid, 
-                'pishes eaten': self.dishes_eaten,
+                'dishes': self.dishes_eaten,
                 'status': self.status,
-                'remaining time': thinking_time}
+                'time': thinking_time}
         
         socketio.emit('update', t_data)
         print(t_data)
@@ -109,9 +106,9 @@ class Philosopher(threading.Thread):
         checking.acquire()
         self.status = 'Hungry'
         h_data = { 'pid': self.pid, 
-                'dishes eaten': self.dishes_eaten,
+                'dishes': self.dishes_eaten,
                 'status': self.status,
-                'remaining time': 0}
+                'time': 0}
         socketio.emit('update', h_data)
         checking.release()
 

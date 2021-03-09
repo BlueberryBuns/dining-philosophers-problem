@@ -5,33 +5,100 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Philosophers</title>
+    <script src="https://cdn.socket.io/3.1.1/socket.io.min.js" integrity="sha384-gDaozqUvc4HTgo8iZjwth73C6dDDeOJsAgpxBcMpZYztUfjHXpzrpdrHRdVp8ySO" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+    <style>
+        body{
+            margin: 40px;
+            margin-top: 70px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Filozofowie</h1>
-    <input type="button" value="Start Philosophers" method="POST">
-    <script src="https://cdn.socket.io/3.1.1/socket.io.min.js" integrity="sha384-gDaozqUvc4HTgo8iZjwth73C6dDDeOJsAgpxBcMpZYztUfjHXpzrpdrHRdVp8ySO" crossorigin="anonymous"></script>
     <script type="text/javascript" charset="utf-8">
         var socket = io();
         socket.on('connect', function() {
             socket.emit('connection', {data: 'I\'m connected!'});
         });
     </script>
+    <header>
+        {% include 'navbar.html' %}
+    </header>
+    <main>
+        {% for p in context['philosophers'] %}
+        <div class="container-fluid">
+        
+            <div class="card" style="width: 30rem;">
+
+                <div class="card-body">
+                    <div class="container-fluid">
+                      <div class="row">
+                        <h5 class="card-title">Filozof {{p.pid}}</h5>
+                      </div>
+                        <div class="container-fluid">
+                            <div class="row">
+                            <div class="col-md-4">
+                                <p class="card-text">Status:</p>
+                            </div>
+                            <div class="col-md-6 status"></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                <p class="card-text">Progress:</p>
+                                </div>
+                                <div class="col-md-6 progress" id="{{p.pid}} progress">AAAAAAAAAAAAAAA</div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 ">
+                                <p class="card-text">Dishes eaten:</p>
+                                </div>
+                                <div class="col-md-6 dishes" id="{{p.pid}} dishes"></div>
+                            </div>
+                        </div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}  
+        </div>
+    </main>
+    
+    
     <script>
         socket.on('initialize', function(data){
             console.log(data.data)
             socket.emit('run');
         });
         </script>
-    {% block philo %}
-    {% for p in context['philosophers'] %}
-    <h1>{{p.pid}}</h1>
     <script>
+        
+        var statusArray = Array.from(document.getElementsByClassName('status'))
+        var progressArray = Array.from(document.getElementsByClassName('progress'))
+        var dishesArray = Array.from(document.getElementsByClassName('dishes'))
+        
         socket.on('update', function(data){
             console.log(data)
+            window.statusArray[data.pid].innerHTML = data.status
+            window.dishesArray[data.pid].innerHTML = data.dishes
         });
+        // function updatea(){
+        //     console.log(window.data_obj)
+        //         if(window.data_obj != undefined){
+                //document.getElementById('aaa').innerHTML = data_obj.process;
+                //document.getElementById('aaa').innerHTML = data_obj.remaining_time;
+                //document.getElementById(String(data_obj.pid + " dishes eaten")).innerHTML = data_obj.dishes_eaten;
+                // var x = document.getElementById(window.data_obj.pid + " progress")
+                // x.innerHTML = "Dzialaj!"
+                // }
+                // else{
+                // document.getElementById(String(data_obj.pid + " status")).innerHTML = "Waiting for data";
+                // document.getElementById(String(data_obj.pid + " progress")).innerHTML = "Waiting for data";
+                // document.getElementById(String(data_obj.pid + " dishes eaten")).innerHTML = "Waiting for data";
+                // }
+                
+            //}
+        //setInterval(updatea, 50)
         </script>
-        
-    {% endfor %}
-    {% endblock %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js" integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0" crossorigin="anonymous"></script>
 </body>
 </html>
