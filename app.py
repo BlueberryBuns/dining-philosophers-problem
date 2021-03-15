@@ -5,13 +5,14 @@ import random as Radom
 from time import sleep
 import json
 import numpy as np
+import sys
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '248889'
 socketio = SocketIO(app)
 app_started = False
 PHILOSOPHERS = []
-checking = threading.Lock() # Mutex ogólny
+checking = threading.Lock()
 N = 5
 
 def ack():
@@ -23,11 +24,11 @@ def run_philosophers(data):
 
 @socketio.on('connection')
 def connected(json):
-    global app_started
+    global app_started, N
     if (not app_started) and True:
         print('working')
         app_started = True
-        emit('initialize', {'data': 'tmp'})
+        emit('initialize', {'data': N})
     print(json['data'])
 
 @socketio.on('philosphers')
@@ -45,7 +46,7 @@ class Philosopher(threading.Thread):
         self.pid = pid
         self.dishes_eaten = 0
         self.status = "Thinking"
-        self.condition = threading.Condition() # Zaweira Mutex wewnątrz
+        self.condition = threading.Condition()
         print("Philosopher created!")
 
     def foo(self):
@@ -146,7 +147,11 @@ def initilizer():
     for x in PHILOSOPHERS:
         x.start()
 
-
+def main(a):
+    global N
+    N = (lambda x: int(x[1]) if len(x) > 1 else 5)(a)
+    socketio.run(app)
 
 if __name__ == '__main__':
-    socketio.run(app)
+    main(sys.argv)
+

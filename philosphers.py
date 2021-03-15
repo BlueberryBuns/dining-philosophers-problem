@@ -1,12 +1,13 @@
 import threading
 import random as Radom
 from time import sleep
+import sys
 #from app import socketio
 
 # AVALIABLE_STATES = ['Thinking','Hungry','Eating']
 PHILOSOPHERS = []
 checking = threading.Lock() # Mutex ogólny
-N = 5
+N = 5 if sys.argv[0] else sys.argv[0]
 
 class Philosopher(threading.Thread):
 
@@ -15,8 +16,13 @@ class Philosopher(threading.Thread):
         self.pid = pid
         self.dishes_eaten = 0
         self.status = "Thinking"
-        self.condition = threading.Condition() # Zaweira Mutex wewnątrz
+        self.condition = threading.Condition()
         print("Philosopher created!")
+        
+    def __str__(self):
+        print({ 'Pid': self.pid, 
+                'Dishes eaten': self.dishes_eaten,
+                'Status': self.status})
 
     def foo(self):
         self.condition.acquire()
@@ -32,10 +38,11 @@ class Philosopher(threading.Thread):
         checking.release()
         eating_time = Radom.uniform(2.5, 3.5)
         #print(f'Philosopher {self.pid} started eating')
-        print({ 'Pid': self.pid, 
-                'Dishes eaten': self.dishes_eaten,
-                'Status': self.status,
-                'Remaining time': eating_time})
+        # print({ 'Pid': self.pid, 
+        #         'Dishes eaten': self.dishes_eaten,
+        #         'Status': self.status,
+        #         'Remaining time': eating_time})
+        print(self)
         #emit('update status', )
         sleep(eating_time)
         checking.acquire()
@@ -54,10 +61,11 @@ class Philosopher(threading.Thread):
         self.status = 'Thinking'
         checking.release()
         thinking_time = Radom.uniform(2.5, 3.5)
-        print('update', { 'Pid': self.pid, 
-                'Dishes eaten': self.dishes_eaten,
-                'Status': self.status,
-                'Remaining time': thinking_time})
+        print(self.__str__())
+        # print('update', { 'Pid': self.pid, 
+        #         'Dishes eaten': self.dishes_eaten,
+        #         'Status': self.status,
+        #         'Remaining time': thinking_time})
 
         # print({ 'Pid': self.pid, 
         #         'Dishes eaten': self.dishes_eaten,
@@ -126,13 +134,13 @@ class Philosopher(threading.Thread):
 #         pass
 
 # @socketio.on('run')
-# def main(data):
-#     print('stared main')
-#     global PHILOSOPHERS, N
-#     PHILOSOPHERS  = [Philosopher(i) for i in range(N)]
+def main():
+    print('stared main')
+    global PHILOSOPHERS, N
+    PHILOSOPHERS  = [Philosopher(i) for i in range(N)]
 
-#     for x in PHILOSOPHERS:
-#         x.start()
+    for x in PHILOSOPHERS:
+        x.start()
     
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    main()

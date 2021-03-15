@@ -15,12 +15,6 @@
     </style>
 </head>
 <body>
-    <script type="text/javascript" charset="utf-8">
-        var socket = io();
-        socket.on('connect', function() {
-            socket.emit('connection', {data: 'I\'m connected!'});
-        });
-    </script>
     <header>
         {% include 'navbar.html' %}
     </header>
@@ -46,7 +40,7 @@
                                 <div class="col-md-4">
                                 <p class="card-text">Progress:</p>
                                 </div>
-                                <div class="col-md-6 progress" id="{{p.pid}} progress">AAAAAAAAAAAAAAA</div>
+                                <div class="col-md-6 progress" id="{{p.pid}} progress">[Progress bar]</div>
                             </div>
                             <div class="row">
                                 <div class="col-md-4 ">
@@ -63,21 +57,35 @@
         </div>
     </main>
     
-    
+    <script type="text/javascript" charset="utf-8">
+        var socket = io();
+        socket.on('connect', function() {
+            socket.emit('connection', {data: 'I\'m connected!'});
+        });
+    </script>
     <script>
+        if(document.getElementsByClassName)
+        var dishesArray = Array.from(document.getElementsByClassName('dishes'))
+        var statusArray = Array.from(document.getElementsByClassName('status'))
+        var progressArray = Array.from(document.getElementsByClassName('progress'))
         socket.on('initialize', function(data){
+            //console.log(length(window.times))
+            window.times = Array(parseInt(data.data))
+            window.times.fill(0)
+            console.log(window.times)
             console.log(data.data)
             socket.emit('run');
         });
         </script>
     <script>
         
-        var statusArray = Array.from(document.getElementsByClassName('status'))
-        var progressArray = Array.from(document.getElementsByClassName('progress'))
-        var dishesArray = Array.from(document.getElementsByClassName('dishes'))
-        
+        function update(){
+
+        };
+
+
         socket.on('update', function(data){
-            console.log(data)
+            console.log(window.times)
             window.statusArray[data.pid].innerHTML = data.status
             window.dishesArray[data.pid].innerHTML = data.dishes
         });
