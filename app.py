@@ -12,8 +12,59 @@ app.config['SECRET_KEY'] = '248889'
 socketio = SocketIO(app)
 app_started = False
 PHILOSOPHERS = []
+FORKS = []
 checking = threading.Lock()
 N = 5
+
+
+class Waiter():
+    def __init__(self):
+        pass
+
+    def ask(self, philosopher):
+        if PHILOSOPHERS[(philosopher.pid + 1) % N].status == "Hungry" and \
+            PHILOSOPHERS[(philosopher.pid + 1) % N].dishes_eaten < philosopher.dishes_eaten:
+            PHILOSOPHERS[(philosopher.pid + 1) % N].condition.acquire()
+            PHILOSOPHERS[(philosopher.pid + 1) % N].condition.notify()
+            PHILOSOPHERS[(philosopher.pid + 1) % N].condition.release()
+            checking.release()
+            return False
+
+        if PHILOSOPHERS[(philosopher.pid - 1) % N].status == "Hungry" and \
+            PHILOSOPHERS[(philosopher.pid - 1) % N].dishes_eaten < philosopher.dishes_eaten:
+            PHILOSOPHERS[(philosopher.pid - 1) % N].condition.acquire()
+            PHILOSOPHERS[(philosopher.pid - 1) % N].condition.notify()
+            PHILOSOPHERS[(philosopher.pid - 1) % N].condition.release()
+            checking.release()
+            return False
+
+        return True
+
+    def inform(self, philosopher):
+        if PHILOSOPHERS[(philosopher.pid + 1) % N].status == "Hungry":
+            PHILOSOPHERS[(philosopher.pid + 1) % N].condition.acquire()
+            PHILOSOPHERS[(philosopher.pid + 1) % N].condition.notify()
+            PHILOSOPHERS[(philosopher.pid + 1) % N].condition.release()
+        if PHILOSOPHERS[(philosopher.pid- 1) % N].status == "Hungry":
+            PHILOSOPHERS[(philosopher.pid - 1) % N].condition.acquire()
+            PHILOSOPHERS[(philosopher.pid - 1) % N].condition.notify()
+            PHILOSOPHERS[(philosopher.pid - 1) % N].condition.release()
+
+
+waiter = Waiter()
+
+
+class Fork():
+    def __init__(self, philosopher):
+        self.philosopher = philosopher
+        self.state = "free"
+
+    def take(self):
+        self.state = "taken"
+
+    def put_down(self):
+        self.state = "free"
+
 
 def ack():
     print('message received')
@@ -54,6 +105,7 @@ class Philosopher(threading.Thread):
         while True:
             self.hungry()
             while not self.__check_forks():
+                print("XDDDDD")
                 self.condition.wait()
             self.eating()
             self.thinking()
@@ -61,6 +113,8 @@ class Philosopher(threading.Thread):
     @socketio.on('update')
     def eating(self):
         self.status = 'Eating'
+        FORKS[self.pid].take()
+        FORKS[(self.pid+1)%N].take()
         checking.release()
         eating_time = Radom.uniform(2.5, 3.5)
         #print(f'Philosopher {self.pid} started eating')
@@ -73,15 +127,19 @@ class Philosopher(threading.Thread):
         sleep(eating_time)
         checking.acquire()
         self.dishes_eaten += 1
+        FORKS[(self.pid % N)].put_down()
+        FORKS[(self.pid+1) % N].put_down()
+
+        waiter.inform(self)
         
-        if PHILOSOPHERS[(self.pid + 1) % N].status == "Hungry":
-            PHILOSOPHERS[(self.pid + 1) % N].condition.acquire()
-            PHILOSOPHERS[(self.pid + 1) % N].condition.notify()
-            PHILOSOPHERS[(self.pid + 1) % N].condition.release()
-        if PHILOSOPHERS[(self.pid - 1) % N].status == "Hungry":
-            PHILOSOPHERS[(self.pid - 1) % N].condition.acquire()
-            PHILOSOPHERS[(self.pid - 1) % N].condition.notify()
-            PHILOSOPHERS[(self.pid - 1) % N].condition.release()
+        # if PHILOSOPHERS[(self.pid + 1) % N].status == "Hungry":
+        #     PHILOSOPHERS[(self.pid + 1) % N].condition.acquire()
+        #     PHILOSOPHERS[(self.pid + 1) % N].condition.notify()
+        #     PHILOSOPHERS[(self.pid + 1) % N].condition.release()
+        # if PHILOSOPHERS[(self.pid - 1) % N].status == "Hungry":
+        #     PHILOSOPHERS[(self.pid - 1) % N].condition.acquire()
+        #     PHILOSOPHERS[(self.pid - 1) % N].condition.notify()
+        #     PHILOSOPHERS[(self.pid - 1) % N].condition.release()
 
     @socketio.on('update')
     def thinking(self):
@@ -115,34 +173,35 @@ class Philosopher(threading.Thread):
 
     def __check_forks(self):
         checking.acquire()
-        if PHILOSOPHERS[(self.pid + 1) % N].status == "Eating" or \
-             PHILOSOPHERS[(self.pid - 1) % N].status == "Eating":
+        print(FORKS[self.pid].state)
+        if FORKS[(self.pid) % N].state == "taken" or \
+             FORKS[(self.pid + 1) % N].state == "taken":
              checking.release()
              return False
         
-        if PHILOSOPHERS[(self.pid + 1) % N].status == "Hungry" and \
-            PHILOSOPHERS[(self.pid + 1) % N].dishes_eaten < self.dishes_eaten:
-            PHILOSOPHERS[(self.pid + 1) % N].condition.acquire()
-            PHILOSOPHERS[(self.pid + 1) % N].condition.notify()
-            PHILOSOPHERS[(self.pid + 1) % N].condition.release()
-            checking.release()
-            return False
+        return waiter.ask(self)
+        # if PHILOSOPHERS[(self.pid + 1) % N].status == "Hungry" and \
+        #     PHILOSOPHERS[(self.pid + 1) % N].dishes_eaten < self.dishes_eaten:
+        #     PHILOSOPHERS[(self.pid + 1) % N].condition.acquire()
+        #     PHILOSOPHERS[(self.pid + 1) % N].condition.notify()
+        #     PHILOSOPHERS[(self.pid + 1) % N].condition.release()
+        #     checking.release()
+        #     return False
 
-        if PHILOSOPHERS[(self.pid - 1) % N].status == "Hungry" and \
-            PHILOSOPHERS[(self.pid - 1) % N].dishes_eaten < self.dishes_eaten:
-            PHILOSOPHERS[(self.pid - 1) % N].condition.acquire()
-            PHILOSOPHERS[(self.pid - 1) % N].condition.notify()
-            PHILOSOPHERS[(self.pid - 1) % N].condition.release()
-            checking.release()
-            return False
-
-        return True
+        # if PHILOSOPHERS[(self.pid - 1) % N].status == "Hungry" and \
+        #     PHILOSOPHERS[(self.pid - 1) % N].dishes_eaten < self.dishes_eaten:
+        #     PHILOSOPHERS[(self.pid - 1) % N].condition.acquire()
+        #     PHILOSOPHERS[(self.pid - 1) % N].condition.notify()
+        #     PHILOSOPHERS[(self.pid - 1) % N].condition.release()
+        #     checking.release()
+        #     return False
 
 @socketio.on('run')
 def initilizer():
     print('stared main')
-    global PHILOSOPHERS, N
+    global PHILOSOPHERS, N, FORKS, waiter
     PHILOSOPHERS  = [Philosopher(i) for i in range(N)]
+    FORKS = [Fork(i) for i in PHILOSOPHERS]
 
     for x in PHILOSOPHERS:
         x.start()

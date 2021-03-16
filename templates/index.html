@@ -40,7 +40,10 @@
                                 <div class="col-md-4">
                                 <p class="card-text">Progress:</p>
                                 </div>
-                                <div class="col-md-6 progress" id="{{p.pid}} progress">[Progress bar]</div>
+                                <div class="progress" id="phil-{{p.pid}}">
+                                    <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3.5"></div>
+                                    <!-- w aria-valuemax=js se to przekazuj / socket -->
+                                </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-4 ">
@@ -77,6 +80,24 @@
             socket.emit('run');
         });
         </script>
+
+    <script>
+        // function progressbar(executionTime, philId){
+        //     let time = 0;
+        //     document.querySelector("#"+philId+" .progress-bar").setAttribute('aria-valuemax', executionTime);
+        //     let updater = setInterval(function(){
+        //         time += 0.1;
+        //         console.log(time);
+        //         if(time < executionTime){
+        //             document.querySelector("#"+philId+" .progress-bar").setAttribute('aria-valuenow', time);
+        //             document.querySelector("#"+philId+" .progress-bar").style.width = (time/executionTime)*100+"%";
+        //         }
+        //         else{
+        //             document.querySelector("#"+philId+" .progress-bar").style.width = "100%";
+        //             clearInterval(updater);  
+        //         } 
+        //     }, 100);
+    </script>
     <script>
         
         function update(){
@@ -88,6 +109,7 @@
             console.log(window.times)
             window.statusArray[data.pid].innerHTML = data.status
             window.dishesArray[data.pid].innerHTML = data.dishes
+            //progressbar(data.time, data.pid);
         });
         // function updatea(){
         //     console.log(window.data_obj)
