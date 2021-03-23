@@ -21,41 +21,75 @@
     <main>
         {% for p in context['philosophers'] %}
         <div class="container-fluid">
-        
-            <div class="card" style="width: 30rem;">
+            <div class="row">
+                <div class="col-md-3">
+                <div class="container-fluid">
+                <div class="card" style="width: 30rem;">
 
+                    <div class="card-body">
+                        <div class="container-fluid">
+                        <div class="row">
+                            <h5 class="card-title">Philospher {{p.pid}}</h5>
+                        </div>
+                            <div class="container-fluid">
+                                <div class="row">
+                                <div class="col-md-4">
+                                    <p class="card-text">Status:</p>
+                                </div>
+                                <div class="col-md-6 status">
+                                    XD
+                                </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                    <p class="card-text">Progress:</p>
+                                    </div>
+                                    <div class="progress" id="phil-{{p.pid}}">
+                                        <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3.5"></div>
+                                        <!-- w aria-valuemax=js se to przekazuj / socket -->
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 ">
+                                    <p class="card-text">Dishes eaten:</p>
+                                    </div>
+                                    <div class="col-md-6 dishes" id="{{p.pid}} dishes"></div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card" style="width: 20rem;">
                 <div class="card-body">
                     <div class="container-fluid">
-                      <div class="row">
-                        <h5 class="card-title">Filozof {{p.pid}}</h5>
-                      </div>
-                        <div class="container-fluid">
+                        <row>
+                            <div class="row">
+                                <h5 class="card-title">Fork {{p.pid}}</h5>
+                            </div>
                             <div class="row">
                             <div class="col-md-4">
                                 <p class="card-text">Status:</p>
                             </div>
-                            <div class="col-md-6 status"></div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-4">
-                                <p class="card-text">Progress:</p>
-                                </div>
-                                <div class="progress" id="phil-{{p.pid}}">
-                                    <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3.5"></div>
-                                    <!-- w aria-valuemax=js se to przekazuj / socket -->
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-4 ">
-                                <p class="card-text">Dishes eaten:</p>
-                                </div>
-                                <div class="col-md-6 dishes" id="{{p.pid}} dishes"></div>
+                            <div class="col-md-6 forkstatus">
+                                free
                             </div>
                         </div>
-                      </div>
+                            
+                            
+
+                        </row>
+                        <row>
+                            <p class=""></p>
+                        </row>
                     </div>
                 </div>
+                </div>
             </div>
+            </div>
+        </div>
         {% endfor %}  
         </div>
     </main>
@@ -71,6 +105,7 @@
         var dishesArray = Array.from(document.getElementsByClassName('dishes'))
         var statusArray = Array.from(document.getElementsByClassName('status'))
         var progressArray = Array.from(document.getElementsByClassName('progress'))
+        var forksArray = Array.from(document.getElementsByClassName("forkstatus"))
         socket.on('initialize', function(data){
             //console.log(length(window.times))
             window.times = Array(parseInt(data.data))
@@ -109,6 +144,8 @@
             console.log(window.times)
             window.statusArray[data.pid].innerHTML = data.status
             window.dishesArray[data.pid].innerHTML = data.dishes
+            window.forksArray[data.pid].innerHTML = data.lefts
+            window.forksArray[data.right].innerHTML = data.rights
             //progressbar(data.time, data.pid);
         });
         // function updatea(){

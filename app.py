@@ -56,14 +56,20 @@ waiter = Waiter()
 
 class Fork():
     def __init__(self, philosopher):
-        self.philosopher = philosopher
+        self.number = philosopher.pid
+        self.current_owner = None
         self.state = "free"
+        self.forkstatus = "Free"
 
-    def take(self):
+    def take(self, philosopher):
+        self.current_owner = philosopher
         self.state = "taken"
+        self.forkstatus = f"Taken by philosopher {philosopher.pid}"
 
     def put_down(self):
+        self.current_owner = None
         self.state = "free"
+        self.forkstatus = "Free"
 
 
 def ack():
@@ -88,7 +94,7 @@ def update(json):
 
 @app.route('/')
 def philosophers():
-    return render_template('index.html', context={'philosophers': PHILOSOPHERS})
+    return render_template('index.html', context={'philosophers': PHILOSOPHERS, 'forks': FORKS})
 
 class Philosopher(threading.Thread):
 
@@ -105,7 +111,6 @@ class Philosopher(threading.Thread):
         while True:
             self.hungry()
             while not self.__check_forks():
-                print("XDDDDD")
                 self.condition.wait()
             self.eating()
             self.thinking()
@@ -113,15 +118,19 @@ class Philosopher(threading.Thread):
     @socketio.on('update')
     def eating(self):
         self.status = 'Eating'
-        FORKS[self.pid].take()
-        FORKS[(self.pid+1)%N].take()
+        FORKS[self.pid].take(self)
+        FORKS[(self.pid+1)%N].take(self)
         checking.release()
         eating_time = Radom.uniform(2.5, 3.5)
         #print(f'Philosopher {self.pid} started eating')
         e_data = { 'pid': self.pid, 
                 'dishes': self.dishes_eaten,
                 'status': self.status,
-                'time': eating_time}
+                'time': eating_time,
+                'right': (self.pid+1)%N,
+                'lefts': FORKS[self.pid].forkstatus,
+                'rights': FORKS[(self.pid+1)%N].forkstatus,
+                }
         print(e_data)
         socketio.emit('update', e_data)
         sleep(eating_time)
@@ -149,7 +158,10 @@ class Philosopher(threading.Thread):
         t_data = { 'pid': self.pid, 
                 'dishes': self.dishes_eaten,
                 'status': self.status,
-                'time': thinking_time}
+                'time': thinking_time,
+                'right': (self.pid+1)%N,
+                'lefts': FORKS[self.pid].forkstatus,
+                'rights': FORKS[(self.pid+1)%N].forkstatus,}
         
         socketio.emit('update', t_data)
         print(t_data)
@@ -167,7 +179,11 @@ class Philosopher(threading.Thread):
         h_data = { 'pid': self.pid, 
                 'dishes': self.dishes_eaten,
                 'status': self.status,
-                'time': 0}
+                'time': 0,
+                'right': (self.pid+1)%N,
+                'lefts': FORKS[self.pid].forkstatus,
+                'rights': FORKS[(self.pid+1)%N].forkstatus
+                }
         socketio.emit('update', h_data)
         checking.release()
 
